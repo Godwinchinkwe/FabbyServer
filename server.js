@@ -16,6 +16,15 @@ const categoryRoutes = require("./routes/categoryRoutes");
 
 const app = express();
 
+app.get("/", (req, res) => {
+  res.status(200).json({
+    ok: true,
+    service: "FABBY LUXE API",
+    message: "API server is running",
+    health: "/api/health"
+  });
+});
+
 app.use(helmet({ crossOriginResourcePolicy: { policy: "cross-origin" } }));
 app.use(cors({
   origin: (process.env.CLIENT_URL || "http://localhost:3000")
