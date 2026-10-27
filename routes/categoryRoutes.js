@@ -1,5 +1,6 @@
 const express = require("express");
 const router = express.Router();
+const mongoose = require("mongoose");
 
 const Product = require("../models/Product");
 const Category = require("../models/Category");
@@ -179,7 +180,15 @@ router.patch("/:id", async (req, res, next) => {
  */
 router.delete("/:id", async (req, res, next) => {
   try {
-    const category = await Category.findById(req.params.id);
+    const { id } = req.params;
+
+    if (!mongoose.isValidObjectId(id)) {
+      return res.status(400).json({
+        message: "Invalid category ID.",
+      });
+    }
+
+    const category = await Category.findById(id);
 
     if (!category) {
       return res.status(404).json({
@@ -187,11 +196,20 @@ router.delete("/:id", async (req, res, next) => {
       });
     }
 
-    // Keep products, but mark products assigned to this category
-    // as uncategorized, matching the admin confirmation message.
     await Product.updateMany(
-      { category: { $in: [category.name, category.slug] } },
-      { $set: { category: "uncategorized" } }
+      {
+        $or: [
+          { categoryId: category._id },
+          { category: category.name },
+          { category: category.slug },
+        ],
+      },
+      {
+        $set: {
+          category: "uncategorized",
+          categoryId: null,
+        },
+      }
     );
 
     await Category.findByIdAndDelete(category._id);
@@ -200,15 +218,32 @@ router.delete("/:id", async (req, res, next) => {
       message: "Category deleted successfully.",
     });
   } catch (error) {
-    if (error.name === "CastError") {
-      return res.status(400).json({
-        message: "Invalid category ID.",
-      });
-    }
-
     next(error);
   }
 });
+
+    // Keep products, but mark products assigned to this category
+    // as uncategorized, matching the admin confirmation message.
+    // await Product.updateMany(
+    //   { category: { $in: [category.name, category.slug] } },
+    //   { $set: { category: "uncategorized" } }
+    // );
+
+    // await Category.findByIdAndDelete(category._id);
+
+    // return res.status(200).json({
+    //   message: "Category deleted successfully.",
+    // });
+//   } catch (error) {
+//     if (error.name === "CastError") {
+//       return res.status(400).json({
+//         message: "Invalid category ID.",
+//       });
+//     }
+
+//     next(error);
+//   }
+// });
 
 
 module.exports = router;
