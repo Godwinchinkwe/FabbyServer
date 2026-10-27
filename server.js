@@ -27,7 +27,7 @@ app.get("/", (req, res) => {
 
 app.use(helmet({ crossOriginResourcePolicy: { policy: "cross-origin" } }));
 app.use(cors({
-  origin: (process.env.CLIENT_URL || "http://localhost:3000")
+  origin: (process.env.CLIENT_URL || "https://fabbyluxe.vercel.app","http://localhost:3000")
     .split(",").map(value => value.trim()),
   credentials: true
 }));
