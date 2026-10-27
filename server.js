@@ -26,11 +26,31 @@ app.get("/", (req, res) => {
 });
 
 app.use(helmet({ crossOriginResourcePolicy: { policy: "cross-origin" } }));
-app.use(cors({
-  origin: (process.env.CLIENT_URL || "https://fabbyluxe.vercel.app","http://localhost:3000")
-    .split(",").map(value => value.trim()),
-  credentials: true
-}));
+
+const allowedOrigins = (
+  process.env.CLIENT_URL ||
+  "https://fabbyluxe.vercel.app,http://localhost:3000"
+)
+  .split(",")
+  .map((origin) => origin.trim().replace(/\/+$/, ""));
+
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin.replace(/\/+$/, ""))) {
+        return callback(null, true);
+      }
+
+      return callback(new Error(`CORS blocked origin: ${origin}`));
+    },
+    methods: ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    credentials: true,
+    optionsSuccessStatus: 204,
+  })
+);
+
+
 app.use(express.json({ limit: "8mb" }));
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 app.use("/api/", rateLimit({
